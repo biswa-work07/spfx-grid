@@ -91,7 +91,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
       .orderBy("Modified", true)
       .get()
       .then((_items: any[]) => {
-        
+
         this.setState({
           items: _items.map((i) => ({
             ...i,
@@ -122,12 +122,13 @@ export default class MainContainerComponent extends React.Component<IMainContain
     const filter = items.filter(x => x.Id == id);
 
     if (filter && filter.length > 0) {
-      const item = filter[0];      
+      const item = filter[0];
       item.isEditable = true;
 
       this.setState({
-        items: items.slice()
+        items: items.slice() // Create a new instance suchthat react reflect the change.
       });
+
     }
   }
 
@@ -169,8 +170,32 @@ export default class MainContainerComponent extends React.Component<IMainContain
   }
 
   private _reloadCompnent = (id: any) => (ev: any) => {
-
     this.get_Document_Library_Data(0);
+  }
+
+
+  private _handleKeyPress(ev:any,id:any) {
+
+    const { items } = this.state;
+    //ev.target.value = used to get the text value
+
+    if (ev.key === 'Enter') {
+
+      console.log('do validate');
+
+      this.setState({
+        items: items.map((i) => ({
+          ...i,
+          isEditable: false
+        })).slice()
+      });
+    }
+
+  }
+
+  private _handleChange = (ev: any) => {
+
+    ev.preventDefault();
 
   }
 
@@ -193,7 +218,6 @@ export default class MainContainerComponent extends React.Component<IMainContain
               <th>Country</th>
               <th>Action</th>
             </tr>
-
             {
               this.state.items.map(myitems1 => {
                 if (myitems1.Id > 0) {
@@ -201,7 +225,8 @@ export default class MainContainerComponent extends React.Component<IMainContain
                     <tr key={myitems1.Id} onClick={this._OnRowClick(myitems1.Id)}>
                       <td>
                         {myitems1.isEditable ?
-                          <input type="text" value={myitems1.Company} />
+                          // <input type="text" defaultValue={myitems1.Company} onKeyPress={this._handleKeyPress(myitems1.Id)} />
+                          <input type="text" defaultValue={myitems1.Company} onKeyPress={(ev)=>this._handleKeyPress(ev,myitems1.Id)} />
                           : <span>{myitems1.Company}</span>}
                       </td>
                       <td>
@@ -243,7 +268,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
           <div className="ms-modalExample-header">
             <table>
               <tr><td>Company</td><td> <TextField errorMessage="Error message" placeholder="I have an error message." /></td></tr>
-              <tr><td>Contact</td><td> <MaskedTextField label="With number mask" mask="99999" /></td></tr>
+              <tr><td>Contact</td><td> <MaskedTextField label="With number mask" /></td></tr>
               <tr><td>CountryName</td><td>
                 <Dropdown
                   label="Controlled example:"
