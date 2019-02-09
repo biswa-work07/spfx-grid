@@ -2,36 +2,23 @@ import * as React from 'react';
 import { escape } from '@microsoft/sp-lodash-subset';
 import styles from '../uiFabricStyle/cust.module.scss';
 import custstyle from './MainContainerComponent';
-
 import pnp from "sp-pnp-js";
-
-
 import { IItem, IMainContainerComponentState } from './IMainContainerComponentState';
 import { IMainContainerComponentProps } from './IMainContainerComponentProps';
-
-
 import { Modal } from 'office-ui-fabric-react/lib/Modal';
 import { css, classNamesFunction } from 'office-ui-fabric-react/lib/Utilities';
 import { DefaultButton, PrimaryButton, IButtonProps } from 'office-ui-fabric-react/lib/Button';
 import { Label } from 'office-ui-fabric-react/lib/Label';
 import { TextField, MaskedTextField } from 'office-ui-fabric-react/lib/TextField';
-
 import { ConsoleListener, Web, Logger, LogLevel, ODataRaw } from "sp-pnp-js";
 import { Dropdown, IDropdown, DropdownMenuItemType, IDropdownOption } from 'office-ui-fabric-react/lib/Dropdown';
 import { BaseComponent } from 'office-ui-fabric-react/lib/Utilities';
-
-
-
-
 import {
   SPHttpClient,
   SPHttpClientResponse,
   SPHttpClientConfiguration
 } from "@microsoft/sp-http";
-
-
 export default class MainContainerComponent extends React.Component<IMainContainerComponentProps, IMainContainerComponentState, any> {
-
 
   public constructor(props: IMainContainerComponentProps, state: IMainContainerComponentState) {
     super(props);
@@ -42,33 +29,73 @@ export default class MainContainerComponent extends React.Component<IMainContain
       selectedItem: null,
       hideDialog: true,
       showModal: false,
-      drpOptions: [],
+      drpOptions: [{ key: 0, text: '-Please Select-' }],
       items: [
         {
           Id: 0,
           Company: "",
           Contact: "",
-          CountryName: null
+          Country: null,
+          fileContent: null
         } as IItem
-      ] as IItem[]
+      ] as IItem[],
+      editItem: { Company: '', Contact: '', Country: { Id: 0, CountryName: '' }, Id: 0, fileContent: null, isEditable: false }
     } as IMainContainerComponentState;
   }
 
-  private _showModal = (): void => {
 
-    /////////////////////////////////////////////////
-    //Loading data from site column  
-    /////////////////////////////////////////////////  
+  private _getSiteColumnData = async () => {
+
+    let { drpOptions } = this.state;
     let web = pnp.sp.web;
     web.fields.getByTitle("CountryName").get().then(f => {
-      console.log(f.Choices);
-      this.setState({
-        drpOptions: f.Choices.slice().map((c, i) => ({
-          key: i,
-          text: c
-        }))
-      });
+      //console.log(f.Choices);
+      drpOptions = drpOptions.concat(...f.Choices.slice().map((c, i) => ({
+        key: i,
+        text: c
+      })));
+
     });
+    return drpOptions;
+
+  }
+
+
+  //Getting data from site collumn
+
+  private _showModal = async () => {
+
+    const drpOptions = await this._getSiteColumnData();
+
+    // let web = pnp.sp.web;
+    // web.fields.getByTitle("CountryName").get().then(f => {
+    //   //console.log(f.Choices);
+
+    //   let { drpOptions } = this.state;
+
+    //   drpOptions = drpOptions.concat(...f.Choices.slice().map((c, i) => ({
+    //     key: i,
+    //     text: c
+    //   })));
+    //   const editItem: IItem = {
+    //     Id: 0, Company: '', Contact: '', Country: { Id: 0, CountryName: '' }, fileContent: null, isEditable: false
+    //   };
+    //   this.setState({
+    //     drpOptions: drpOptions,
+    //     editItem
+    //   });
+    // });
+
+
+    const editItem: IItem = {
+      Id: 0, Company: '', Contact: '', Country: { Id: 0, CountryName: '' }, fileContent: null, isEditable: false
+    };
+
+    this.setState({
+      drpOptions: drpOptions,
+      editItem
+    });
+
     this.setState({ showModal: true });
     /////////////////////////////////////////////////
   }
@@ -94,21 +121,17 @@ export default class MainContainerComponent extends React.Component<IMainContain
 
         this.setState({
           items: _items.map((i) => ({
-            ...i,
+            Id: i.Id,
+            Company: i.Company,
+            Contact: i.Contact,
+            Country: {
+              Id: i.CountryId || 0,
+              CountryName: i.CountryName
+            },
+            fileContent: null,
             isEditable: false
           }))
         });
-
-        // this.setState({
-        //   items: _items.map((i) => ({
-        //     ...i,
-        //     isEditable: false
-        //   }))
-        // });
-
-        //this.setState({items:_items});
-
-
       });
   }
 
@@ -173,8 +196,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
     this.get_Document_Library_Data(0);
   }
 
-
-  private _handleKeyPress(ev:any,id:any) {
+  private _handleKeyPress(ev: any, id: any) {
 
     const { items } = this.state;
     //ev.target.value = used to get the text value
@@ -193,17 +215,89 @@ export default class MainContainerComponent extends React.Component<IMainContain
 
   }
 
-  private _handleChange = (ev: any) => {
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////GRID COMPONENT END /////////////////////////
+  ////////////////////////////////////////////////////////////////////
 
-    ev.preventDefault();
 
+  ////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////Add New Data in Sharepoint Document Library ////////////
+  ////////////////////////////////////////////////////////////////////////////////
+
+  private saveToServer = async (item: IItem) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(item);
+        // sp.web
+        //   .getFolderByServerRelativeUrl("Student Details No Content Type")
+        //   .files.add(fileContent.name, fileContent, true)
+        //   .then(f => {
+        //     f.file.getItem().then(item => {
+        //       item.update({
+        //         Title: "A Title"            
+        //       });
+        //     });
+        //   });
+      });
+    });
+  }
+  //Add new Record to sharepoint
+  private _addNewRecord_Sharepoint = async () => {
+    let { editItem, items } = this.state;
+    const result = await this.saveToServer(editItem);
+    items = items.concat(result);
+
+    this.setState({
+      items: items.slice(),
+      editItem: { Id: 0, Company: '', Contact: '', Country: { Id: 0, CountryName: '' }, fileContent: null, isEditable: false },
+      showModal: false
+    });
   }
 
+  //Setting temp data from textbox
+  private handleCommChange = (fieldName: string) => (text: string): void => {
+    const { editItem } = this.state;
+    this.setState({
+      editItem: {
+        ...editItem,
+        [fieldName]: text
+      }
+    });
+  }
 
+  private handleDrpChange = (event: any) => {
+    const { editItem } = this.state;
+    const { key, text } = event;
+    this.setState({
+      editItem: {
+        ...editItem,
+        Country: {
+          Id: parseInt(key),
+          CountryName: text
 
+        }
+      }
+    });
+  }
+
+  private _changeFileSelection = (e: any) => {
+    if (
+      e.currentTarget &&
+      e.currentTarget.files &&
+      e.currentTarget.files.length > 0
+    ) {
+      const { editItem } = this.state;
+      this.setState({
+        editItem: {
+          ...editItem,
+          fileContent: e.currentTarget.files[0]
+        }
+      });
+    }
+  }
 
   public render(): React.ReactElement<IMainContainerComponentProps> {
-    const { disabled, checked, selectedItem, drpOptions } = this.state;
+    const { disabled, checked, selectedItem, drpOptions, editItem } = this.state;
 
     return (
       <div className="custstyle">
@@ -226,17 +320,18 @@ export default class MainContainerComponent extends React.Component<IMainContain
                       <td>
                         {myitems1.isEditable ?
                           // <input type="text" defaultValue={myitems1.Company} onKeyPress={this._handleKeyPress(myitems1.Id)} />
-                          <input type="text" defaultValue={myitems1.Company} onKeyPress={(ev)=>this._handleKeyPress(ev,myitems1.Id)} />
+                          <input type="text" defaultValue={myitems1.Company} onKeyPress={(ev) => this._handleKeyPress(ev, myitems1.Id)} />
                           : <span>{myitems1.Company}</span>}
                       </td>
                       <td>
                         {myitems1.Contact}
                       </td>
                       <td>
-                        {myitems1.CountryName}
+                        {myitems1!.Country!.CountryName}
                       </td>
 
                       {myitems1.Id % 2 === 0 ? <td>
+
                         <DefaultButton
                           data-automation-id="test"
                           disabled={disabled}
@@ -244,8 +339,8 @@ export default class MainContainerComponent extends React.Component<IMainContain
                           text="Delete"
                           onClick={this.DeleteItem}
                         />
-                      </td> : null}
 
+                      </td> : null}
 
                     </tr>
                   );
@@ -264,36 +359,39 @@ export default class MainContainerComponent extends React.Component<IMainContain
           isBlocking={false}
           containerClassName="ms-modalExample-container"
         >
-
           <div className="ms-modalExample-header">
             <table>
-              <tr><td>Company</td><td> <TextField errorMessage="Error message" placeholder="I have an error message." /></td></tr>
-              <tr><td>Contact</td><td> <MaskedTextField label="With number mask" /></td></tr>
+              <tr><td>Company</td><td> <TextField value={editItem.Company} onChanged={this.handleCommChange("Company")} /></td></tr>
+              <tr><td>Contact</td><td> <TextField value={editItem.Contact} onChanged={this.handleCommChange("Contact")} /></td></tr>
               <tr><td>CountryName</td><td>
                 <Dropdown
-                  label="Controlled example:"
-                  selectedKey={selectedItem ? selectedItem.key : undefined}
-                  onChanged={this._log('onFocus called')}
+                  // selectedKey={editItem ? editItem.Country ? editItem.Country.Id : undefined : undefined}
+                  onChanged={this.handleDrpChange}
                   onFocus={this._log('onFocus called')}
                   onBlur={this._log('onBlur called')}
                   placeholder="Select an Option"
                   options={drpOptions}
                 />
-
-              </td></tr>
+              </td>
+              </tr>
+              <tr>
+                <td>
+                  Upload File
+                </td>
+                <td>
+                  <input
+                    type="file"
+                    id="uploadFile"
+                    onChange={this._changeFileSelection}></input>
+                </td>
+              </tr>
             </table>
           </div>
-
-
-
           <div id="subtitleId" className="ms-modalExample-body">
+            <DefaultButton onClick={this._addNewRecord_Sharepoint} text="Add Record" />
             <DefaultButton onClick={this._closeModal} text="Close" />
           </div>
         </Modal>
-
-
-
-
 
       </div>
     );
@@ -301,14 +399,11 @@ export default class MainContainerComponent extends React.Component<IMainContain
 
   private _log(str: string): () => void {
     return (): void => {
+
       console.log(str);
+
+
     };
-  }
-
-
-  public changeState = (event: React.FormEvent<HTMLDivElement>, d_item: IDropdownOption): void => {
-    console.log('here is the things updating...' + d_item.key + ' ' + d_item.text + ' ' + d_item.selected);
-    this.setState({ selectedItem: d_item });
   }
 
 

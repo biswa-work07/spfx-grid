@@ -1,13 +1,16 @@
+import { Item } from "sp-pnp-js";
+
 export interface IItem {
   Id?: number;
   Company?: string;
   Contact?: string;
-  CountryName: ICountryName;
-  isEditable?:boolean;
+  Country?: ICountry;
+  fileContent?: any;
+  isEditable?: boolean;
 }
 
-export interface ICountryName {
-  Id?: string;
+export interface ICountry {
+  Id?: number;
   CountryName?: string;
 }
 
@@ -15,11 +18,12 @@ export interface IMainContainerComponentState {
 
   disabled: boolean;
   checked: boolean;
-  drpOptions:Array<any>;
+  drpOptions: Array<any>;
   selectedItem?: { key: string | number | undefined };
 
   TestProperty1: any;
   hideDialog: any;
   showModal: boolean;
   items: IItem[];
+  editItem?:IItem;
 }
