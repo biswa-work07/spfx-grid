@@ -68,7 +68,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
     });
   }
 
-  private m = () => {
+  private AsyncAll_Test = (id: any) => {
     return new Promise((resolve, reject) => {
       const list = [1, 2, 3];
       const prs = [];
@@ -88,12 +88,11 @@ export default class MainContainerComponent extends React.Component<IMainContain
     });
   }
 
-
   //Getting data from site collumn
 
   private _showModal = async () => {
     console.log('aa');
-    const fs = await this.m();
+    const fs = await this.AsyncAll_Test(-1);
     console.log(fs);
 
     const drpOptions = await this._getSiteColumnData(0);
