@@ -29,7 +29,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
       selectedItem: null,
       hideDialog: true,
       showModal: false,
-      drpOptions: [{ key: 0, text: '-Please Select-' }],
+      drpOptions: [],
       items: [
         {
           Id: 0,
@@ -44,35 +44,66 @@ export default class MainContainerComponent extends React.Component<IMainContain
   }
 
 
-  private _getSiteColumnData = async () => {
 
-    let { drpOptions } = this.state;
+  private _getSiteColumnData = (id: any): Promise<any> => {
     let web = pnp.sp.web;
-    web.fields.getByTitle("CountryName").get().then(f => {
-      //console.log(f.Choices);
-      drpOptions = drpOptions.concat(...f.Choices.slice().map((c, i) => ({
-        key: i,
-        text: c
-      })));
+    let drpOptions = null;
 
+    // return web.fields.getByTitle("CountryName").get().then(f => {
+    //   //console.log(f.Choices);
+    //   drpOptions = f.Choices.map((c, i) => ({
+    //     key: i,
+    //     text: c
+    //   })).slice();
+    //   return drpOptions;
+    // });
+    return new Promise((resolve, reject) => {
+      web.fields.getByTitle("CountryName").get().then((f) => {
+        drpOptions = f.Choices.map((c, i) => ({
+          key: i,
+          text: c
+        })).slice();
+        resolve(drpOptions);
+      });
     });
-    return drpOptions;
+  }
 
+  private m = () => {
+    return new Promise((resolve, reject) => {
+      const list = [1, 2, 3];
+      const prs = [];
+      list.forEach((i) => {
+        let fieldName = null;
+        if (i == 1) {
+          fieldName = "CountryName";
+        } else {
+          fieldName = "Categories";
+        }
+        prs.push(pnp.sp.web.fields.getByTitle(fieldName).get());
+      });
+      Promise.all(prs).then(f => {
+        // console.clear();
+        resolve(f);
+      });
+    });
   }
 
 
   //Getting data from site collumn
 
   private _showModal = async () => {
+    console.log('aa');
+    const fs = await this.m();
+    console.log(fs);
 
-    const drpOptions = await this._getSiteColumnData();
+    const drpOptions = await this._getSiteColumnData(0);
+    console.log('bb');
+
 
     // let web = pnp.sp.web;
     // web.fields.getByTitle("CountryName").get().then(f => {
     //   //console.log(f.Choices);
-
     //   let { drpOptions } = this.state;
-
     //   drpOptions = drpOptions.concat(...f.Choices.slice().map((c, i) => ({
     //     key: i,
     //     text: c
@@ -91,8 +122,11 @@ export default class MainContainerComponent extends React.Component<IMainContain
       Id: 0, Company: '', Contact: '', Country: { Id: 0, CountryName: '' }, fileContent: null, isEditable: false
     };
 
+    console.log(drpOptions);
+
+
     this.setState({
-      drpOptions: drpOptions,
+      drpOptions: [{ key: 0, text: '-Please Select-' }, ...drpOptions.slice()],
       editItem
     });
 
@@ -228,7 +262,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         resolve(item);
-        // sp.web
+        // pnp.sp.web
         //   .getFolderByServerRelativeUrl("Student Details No Content Type")
         //   .files.add(fileContent.name, fileContent, true)
         //   .then(f => {
@@ -365,7 +399,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
               <tr><td>Contact</td><td> <TextField value={editItem.Contact} onChanged={this.handleCommChange("Contact")} /></td></tr>
               <tr><td>CountryName</td><td>
                 <Dropdown
-                  // selectedKey={editItem ? editItem.Country ? editItem.Country.Id : undefined : undefined}
+                  defaultSelectedKey={0}
                   onChanged={this.handleDrpChange}
                   onFocus={this._log('onFocus called')}
                   onBlur={this._log('onBlur called')}
