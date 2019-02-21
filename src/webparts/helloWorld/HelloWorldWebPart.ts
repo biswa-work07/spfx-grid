@@ -32,7 +32,9 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
   protected onDispose(): void {
     ReactDom.unmountComponentAtNode(this.domElement);
   }
-
+private openPropertyPane=()=>{
+  this.context.propertyPane.open();
+}
   protected get dataVersion(): Version {
     return Version.parse('1.0');
   }

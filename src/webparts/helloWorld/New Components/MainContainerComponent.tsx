@@ -18,8 +18,9 @@ import {
   SPHttpClientResponse,
   SPHttpClientConfiguration
 } from "@microsoft/sp-http";
+import Utility from '../lib/common';
 export default class MainContainerComponent extends React.Component<IMainContainerComponentProps, IMainContainerComponentState, any> {
-
+  private _util = new Utility();
   public constructor(props: IMainContainerComponentProps, state: IMainContainerComponentState) {
     super(props);
 
@@ -248,6 +249,9 @@ export default class MainContainerComponent extends React.Component<IMainContain
 
   }
 
+
+
+
   ////////////////////////////////////////////////////////////////////
   ////////////////////////GRID COMPONENT END /////////////////////////
   ////////////////////////////////////////////////////////////////////
@@ -256,6 +260,9 @@ export default class MainContainerComponent extends React.Component<IMainContain
   ////////////////////////////////////////////////////////////////////////////////
   ////////////////////////Add New Data in Sharepoint Document Library ////////////
   ////////////////////////////////////////////////////////////////////////////////
+
+
+
 
   private saveToServer = async (item: IItem) => {
     return new Promise((resolve, reject) => {
@@ -320,6 +327,7 @@ export default class MainContainerComponent extends React.Component<IMainContain
       e.currentTarget.files.length > 0
     ) {
       const { editItem } = this.state;
+      const s = this._util.sampleReturn(0);
       this.setState({
         editItem: {
           ...editItem,
